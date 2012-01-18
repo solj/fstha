@@ -1,0 +1,164 @@
+HA/FST version 3.0.1 Release Notes for binaries 1/11/2006
+
+Changes in release 3.0.1
+------------------------
+Bug Fixes
+------------------------
+- Syntax error parsing -t option of
+  fstmodapp prevented proper creation
+  of application agents.
+
+Changes in release 3.0
+------------------------
+
+- Removed requirement for license to use
+  some features.
+
+- Released source code under GNU GPL.
+
+------------------------
+Bug Fixes
+------------------------
+- If virtual host takeover occurs on the
+  last node in the cluster, the bringup
+  could be attempted on any random node.
+
+- Using a reservation disk resulted in
+  bringing the cluster down due to remaining
+  nodes inability to lock disk until
+  scsi timeout occurs.
+
+- Minor label corrections in fsthamon.
+
+- Minor documentation corrections.
+
+**********************************************
+NOTE: The x86 binaries do not include the
+GUI interface (fsthatool). Only the command
+line and text based interfaces are provided.
+**********************************************
+
+
+/**********************************************************/
+/*** The following differs from from previous upgrades ****/
+/**********************************************************/
+
+------------------------------------------------------
+To upgrade to HA/FST version 3.0 from version 2.0.1
+------------------------------------------------------
+
+ 1. Failover applications to one node (referred to as node-a).
+
+ 2. On node-b, shutdown HA/FST:
+
+        # export PATH=/opt/FSTha/bin:$PATH
+        # fstha shutdown
+
+ 3. On node-b, remove HA/FST:
+
+        # pkgrm FSTha FSThaapp [ FSThagui ]
+
+   Note, customized configuration additions will remain.
+
+ 4. On node-b, install current release:
+
+        # pkgadd -d FSTha.3.0-<arch>.pkg FSTha FSThaapp FSThagui
+
+ 5. Start cluster on node-b
+
+        # fstha <startup [0|1|2|3] | autostart| autostart+>
+        # fsthamon                                 'wait for UP to complete
+
+ 6. Shudown HA/FST on node-a
+
+        # export PATH=/opt/FSTha/bin:$PATH
+        # fstha shutdown
+
+ 7. Failover virutalhosts/applications to node-b.
+
+ 8. On node-a, remove HA/FST:
+
+        # pkgrm FSTha FSThaapp [ FSThagui ]
+
+   Note, customized configuration additions will remain.
+
+ 9. On node-a, install current release:
+
+        # pkgadd -d FSTha.2.0-<arch>.pkg FSTha FSThaapp FSThagui
+
+10. Start cluster on node-a
+
+        # fstha <startup [0|1|2|3] | autostart| autostart+>
+        # fsthamon                                 'wait for SYNC to complete
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+-------------------end upgrade from version 2.x-------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+
+------------------------------------------------------
+To upgrade to HA/FST version 3.0 from version 1.x
+------------------------------------------------------
+
+ 1. Failover applications to one node (referred to as node-a).
+
+ 2. On node-b, shutdown HA/FST:
+
+        # export PATH=/opt/FSTha/bin:$PATH
+        # fstha shutdown
+
+ 3. On node-b, remove HA/FST:
+
+        # pkgrm FSTha FSThaapp [ FSThagui ]
+
+   Note, customized configuration additions will remain.
+
+ 4. On node-b, install current release:
+
+        # pkgadd -d FSTha.2.0-<arch>.pkg FSTha FSThaapp FSThagui
+
+/**********************************************************/
+/*** The following differs from from previous upgrades ****/
+/**********************************************************/
+
+ 5. On node-b, upgrade configuration file:
+
+        # fstupgrade.2
+
+ 6. Shudown HA/FST on node-a
+
+        # export PATH=/opt/FSTha/bin:$PATH
+        # fstha shutdown
+
+ 7. Bootup cluster on node-b
+
+        # fstha <bootup | autostart| autostart+>
+        # fsthamon                                 'wait for UP to complete
+
+ 8. Failover virutalhosts/applications to node-b.
+
+ 9. On node-a, remove HA/FST:
+
+        # pkgrm FSTha FSThaapp [ FSThagui ]
+
+   Note, customized configuration additions will remain.
+
+10. On node-a, install current release:
+
+        # pkgadd -d FSTha.2.0-<arch>.pkg FSTha FSThaapp FSThagui
+
+11. On node-a, upgrade configuration file:
+
+        # fstupgrade.2
+
+12. Start cluster on node-a
+
+        # fstha <startup | autostart| autostart+>
+        # fsthamon                                 'wait for SYNC to complete
+
+------------------------------------------------------------------------
+------------------------------------------------------------------------
+-------------------end upgrade from version 1.x-------------------------
+------------------------------------------------------------------------
+------------------------------------------------------------------------

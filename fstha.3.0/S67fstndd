@@ -1,0 +1,29 @@
+#!/bin/sh
+# HA/FST - High Availability Cluster
+# Copyright (C) 2003-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU  General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# 
+# File Name: S67fstndd
+# 		
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+#
+# NOTES:
+# Does not work for le0 & qe cards.
+# NIC must support instance parameter such as eri, hme, & qfe
+
+#Uncomment the following lines for the first NIC
+#/usr/sbin/ndd -set /dev/hme instance 0
+#/usr/sbin/ndd -set /dev/tcp tcp_time_wait_interval 30000
+#/usr/sbin/ndd -set /dev/tcp fin_wait_2_flush 37500
+
+#Uncomment the following lines for the first NIC
+#/usr/sbin/ndd -set /dev/hme instance 1
+#/usr/sbin/ndd -set /dev/tcp tcp_time_wait_interval 30000
+#/usr/sbin/ndd -set /dev/tcp fin_wait_2_flush 37500

@@ -1,0 +1,51 @@
+#!/bin/sh
+#
+# apps/nic/test
+#
+# Copyright (c) Foundation Software Tools, LLC
+#
+
+PATH=$PATH:/usr/bin:/usr/sbin
+export PATH
+
+DIRNAME=`dirname $0`
+NETTAB=$DIRNAME/../../nettab
+
+getdev () {
+        ip=$1
+        /usr/sbin/ifconfig -a|while read first second rest; do
+                dev=$first
+                if [ "$first" = "inet" ]; then
+                        if [ "$second" = "$ip" ]; then
+                                echo $prevdev|sed 's/:$//'
+                                return
+                        fi
+                fi
+                prevdev=$dev
+        done
+}
+
+rm -f /tmp/appsnictest.failed
+grep -v "^#" $NETTAB|while read pdev adev ip mast bcast; do
+	currdev=`getdev $ip`
+	ping -i $currdev $bcast 3 > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		touch /tmp/appsnictest.failed
+		ifconfig $currdev unplumb
+		if [ $currdev = $pdev ]; then
+			ifconfig $adev plumb
+			ifconfig $adev inet $ip netmask $mast $broadcast $bcast 
+			ifconfig $adev up
+		else
+			ifconfig $pdev plumb
+			ifconfig $pdev inet $ip netmask $mast $broadcast $bcast
+			ifconfig $pdev up
+		fi
+	fi
+done
+if [ -f /tmp/appsnictest.failed ]; then
+	rm -f /tmp/appsnictest.failed
+	exit 1
+fi
+exit 0
+

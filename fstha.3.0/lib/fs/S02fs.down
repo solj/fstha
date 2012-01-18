@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# S02fs.down
+#
+# (c)2003 - 2005 Foundation Software Tools, LLC
+#
+
+
+PATH=/usr/bin:/usr/sbin:/opt/FSTha/bin:$PATH
+export PATH
+DIR=`dirname $0`
+LOGGER="logger -t `pwd`/fs.down "
+
+vx_deport () {
+dg=`echo $1|awk -F'/' '{print $5}'`
+vxvol -g $dg stopall
+vxdg deport $dg
+}
+
+metaset_release () {
+set=`echo $1|awk -F'/' '{print $4}'`
+metaset -s $set -r 
+}
+
+TMPFILE=/tmp/`echo $0|tr '/' '_'`.tmp
+rm $TMPFILE > /dev/null 2>&1
+grep -v "^#" $DIR/fstab|while read dev rdev mpt fstype rest; do
+	mount |grep "$mpt on " > /dev/null 2>&1
+	if [ "$?" -eq "0" ]; then
+		umount $mpt
+		if [ "$?" -ne "0" ]; then
+			$LOGGER Forcing Umount Of $mpt.
+			umount -f $mpt
+			if [ "$?" -ne "0" ]; then
+				$LOGGER Umount Of $mpt Failed.
+				touch $TMPFILE
+			else
+				if [ "`echo $dev|awk -F'/' '{print $3}'`" = "vx" ]; then
+					vx_deport $dev
+				fi
+				if [ "`echo $dev|awk -F'/' '{print $3}'`" = "md" \
+					-a ! "`echo $dev|awk -F'/' '{print $4}'`" = "dsk" ]; then
+					metaset_release $dev
+				fi
+			fi
+		else
+			if [ "`echo $dev|awk -F'/' '{print $3}'`" = "vx" ]; then
+				vx_deport $dev
+			fi
+			if [ "`echo $dev|awk -F'/' '{print $3}'`" = "md" \
+				-a ! "`echo $dev|awk -F'/' '{print $4}'`" = "dsk" ]; then
+				metaset_release $dev
+			fi
+		fi
+		
+	fi
+done
+if [ -f  $TMPFILE ]; then
+	exit 1
+fi
+exit 0

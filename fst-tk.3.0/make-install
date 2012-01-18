@@ -1,0 +1,5 @@
+PATH=$PATH:/usr/local/ActiveTcl/bin export PATH
+tclapp -compile -prefix /usr/local/ActiveTcl/bin/base-tk-solaris-sparc -out fsthatool fsthaopr.tcl
+mkdir -p /opt/FSTha/bin 
+cp fsthatool /opt/FSTha/bin
+cp -r lib /opt/FSTha/

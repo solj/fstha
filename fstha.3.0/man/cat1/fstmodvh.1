@@ -1,0 +1,94 @@
+Foundation Software Tools                                        fstmodvh(1)
+
+NAME
+
+        fstmodvh - modify virtual host attributes
+
+SYNOPSIS
+        fstmodvh <OPTIONS>
+
+DESCRIPTION
+        The fstmodvh is used to change virtual host attributes 
+        including adding network or file system resources.
+
+OPTIONS
+        The following are supported:
+
+        -x #       REQUIRED. There are four virtual hosts per cluster
+                   numbered 0, 1, 2, and 3. Use this option to specify
+                   which.
+
+         -d dir    OPTIONAL. Change or define virtualhost's base
+                   directory.
+
+         -n name   OPTIONAL. Change or define virtualhost's name.
+
+         -f node#  OPTIONAL. Specify a node to fallback to when node
+                   becomes available. The default is neither.
+
+         -t node#  OPTIONAL. Specify a node to fail to if node is
+                   available at time of failover. The default is neither.
+
+
+	 NETWORK Setup options are OPTIONAL but all are required if used:
+
+         -1 nic    The Primary Network Interface. If not using IP
+                   Multipathing, then this can be a logical interface,
+                   e.g. eri0:1
+
+         -2 nic    The Alternate Network Interface. If not using IP
+                   Multipathing, then this can be a logical interface,
+                   e.g. eri0:2
+
+         -m mask   The Netmask, e.g. 255.255.255.0
+
+         -b addr   The Broadcast Address, e.g. 192.168.1.255
+
+         -i addr   Specify the IP address without multipathing.
+                      OR
+         -I addr   Specify the IP address with IP Multipathing.
+                   With multipathing, the two consecutive IP addresses
+                   following will be used. For example, if you specify
+                   192.168.1.10 then 192.168.1.11 an 192.168.1.2 will
+                   be used as dummy address. Care should be used.
+
+
+	 FILE SYSTEM Setup options are OPTIONAL but all are required if used:
+
+         -D dev   The device to mount, e.g. /dev/dsk/c1t1d0s0
+
+         -R rdev  The raw device to fsck, e.g. /dev/rdsk/c1t1d0s0
+
+         -F type  The file system type, e.g. ufs, vxfs
+
+         -M dir   The mount point, e.g. /MyDirectory
+
+
+
+
+EXAMPLES
+        Example 1: Create a virtual host whose name is WEB as
+                   virtual host number 1.
+
+        example# fstaddvh -x 1 -d /opt/FSTha/vh/WEB -n WEB 
+        example# fstmodvh -x 1 -f 0 \
+                          -1 le0:1 -2 le0:2 -i 192.168.1.11 \
+                          -m 255.255.255.0 -b 192.168.1.255
+
+
+        Example 2: Change virtual host number 0's name to YourHost
+
+        example# fstmodvh -x 0 -b /opt/FSTha/vh/YourHost -n YourHost
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fstaddvh(1), fstdelvh(1)

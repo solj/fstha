@@ -1,0 +1,44 @@
+Foundation Software Tools                                        fsthbm   (1)
+                                                                 fstasm   (1)
+                                                                 fstast   (1)
+                                                                 fsthbb   (1)
+                                                                 fsthbserv(1)
+                                                                 fstsvr   (1)
+
+NAME
+
+        fsthbm    - main cluster state daemon
+        fstasm    - main application daemon
+        fstast    - application testing daemon
+        fsthbb    - send heartbeats daemon
+        fsthbserv - receive heartbeat server daemon
+        fstsvr    - cluster state server daemon
+
+SYNOPSIS
+        fsthbm
+        fstasm
+        fstast
+        fsthbb
+        fsthbserv
+
+DESCRIPTION
+        The fstsvr, fsthbm, fstasm, fstast, fsthbb, and fsthbserv are
+        internal commands that should only be started from fstha.
+
+
+OPTIONS
+        There are no supported options.
+
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fstha(1)

@@ -1,0 +1,28 @@
+#!/bin/sh 
+#
+# notify
+#
+# Copyright (c) 2005 Foundation Software Tools, LLC
+#
+
+BASE=`basename $0`
+DIR=`dirname $0`
+PATH=/usr/ucb:$PATH export PATH
+
+MAILTO=root
+
+usage () {
+	echo " "
+        echo "Usage: $BASE <messages>"
+	echo " "
+}
+
+
+# set defaults
+
+if [ "$#" -eq 0 ]; then
+	usage
+	exit 1
+fi
+
+echo "$*"|/usr/bin/mailx -s "HA/FST: $*" ${MAILTO:-root}

@@ -1,0 +1,33 @@
+#!/bin/sh
+#
+# S01net.down
+#
+# (c)2003 - 2005 Foundation Software Tools, LLC
+#
+
+PATH=/usr/bin:/usr/sbin:/opt/FSTha/bin:$PATH
+export PATH
+
+DIRNAME=`dirname $0`
+NETTAB=$DIRNAME/nettab
+LOGGER="logger -t `pwd`/S01net.down -p daemon.notice "
+
+
+getdev () {
+        ip=$1
+        /usr/sbin/ifconfig -a|while read first second rest; do
+                dev=$first
+                if [ "$first" = "inet" ]; then
+                        if [ "$second" = "$ip" ]; then
+                                echo $prevdev|sed 's/:$//'
+                                return
+                        fi
+                fi
+                prevdev=$dev
+        done
+}
+
+grep -v "^#" $NETTAB|while read pdev adev ip mast bcast; do
+	ifconfig `getdev $ip` unplumb
+done
+exit 0

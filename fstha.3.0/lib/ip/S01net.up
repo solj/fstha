@@ -1,0 +1,34 @@
+#!/bin/sh
+#
+# S01net.up
+#
+# (c)2003 -2005 Foundation Software Tools, LLC
+#
+
+PATH=/usr/bin:/usr/sbin:/opt/FSTha/bin:$PATH
+export PATH
+
+DIRNAME=`dirname $0`
+LOGGER="logger -t `pwd`/S01net.up "
+NETTAB=$DIRNAME/nettab
+
+grep -v "^#" $NETTAB|while read pdev adev ip mast bcast ether; do
+	ifconfig $pdev plumb
+	if [ "$?" -ne "0" ]; then
+		$LOGGER Plumb $pdev Failed.
+		exit 1
+	fi
+	ping $ip 3
+	if [ "$?" -ne "0" ]; then
+		ifconfig $pdev ether $ether up
+		ifconfig $pdev inet $ip netmask $mast broadcast $bcast up
+		if [ "$?" -ne "0" ]; then
+			$LOGGER Ifconfig $pdev With $ip Failed.
+			exit 1
+		fi
+	else
+		$LOGGER  $ip Already Exists. Failed.
+		exit 1
+	fi
+done
+exit 0

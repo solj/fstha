@@ -1,0 +1,35 @@
+#!/bin/sh 
+#
+# HA/FST - High Availability Cluster
+# Copyright (C) 2003-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU  General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# 
+# File Name: S99fstha
+# 		init.d script if using autostart or autostart+
+# 
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+#
+
+PATH=$PATH:/opt/FSTha/bin
+export PATH
+
+case "$1" in
+	'start')
+		fstha autostart
+		;;
+	'stop')
+		fstha shutdown
+		;;
+	*)
+		echo "Usage: $0 { start | stop }"
+		exit 1
+		;;
+esac
+exit 0

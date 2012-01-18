@@ -1,0 +1,149 @@
+#!/bin/sh 
+#
+# HA/FST - High Availability Cluster
+# Copyright (C) 2003-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU  General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# 
+# File Name: fstaddvh
+# 		Add or modify a virtual host
+# 
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+
+DIR=`dirname $0`
+BASE=`basename $0`
+WARN=/tmp/$BASE.$$.w
+FLIB=/opt/FSTha/lib
+ISDOWN=1
+ISFAIL=3
+ISUNDEF=9
+
+usage () {
+	echo " "
+        echo "Usage: $BASE <OPTIONS>"
+	echo " "
+        echo "REQUIRED:"
+	echo "       -x #    (0-3, Virtual Host's Unique Number)"
+	echo "       -d str  (txt, Virtual Host's Base Directory)"
+	echo "       -n str  (txt, Virutal Host Name)"
+	echo " "
+	echo "OPTIONAL:"
+	echo "       -f #    (0,1,2,3,8 Fallback to this Node when Node becomes available, 8=Either, DEFAULT=Neither)"
+	echo "       -t #    (0,1,2,3,8 Fail to this Node if Node is available at failover, 8=Either, DEFAULT=Neither)"
+}
+
+rm -f $WARN
+
+echo "Checking..."
+
+# set defaults
+node="`$DIR/fstha export|awk '/nodeN/ {print $2}'`"
+stat=1
+fallback=9
+failto=9
+
+while getopts :x:d:n:f:t o
+do
+	case "$o" in
+	x)	number="`expr 0 + $OPTARG`" 
+		export number
+		res=$?
+		if [ "$res" -gt 1 -o "$number" -lt 0 -o "$number" -gt 3 ]; then
+			echo " "
+			echo "x must be between 0 and 3"
+			usage
+			exit 1
+		fi
+		if [ ! "x`$DIR/fstha export lh${number}name |awk '{print $2}'`" = "x" ]; then
+			touch $WARN
+			echo " "
+			echo " -x $number has been previously used"
+		fi
+		astat=`$DIR/fstha export lh${number}stat|awk '{print $2}'`
+		if [  "$astat" -eq "$ISFAIL" -o "$astat" -eq "$ISDOWN"  -o "$astat" -eq "$ISUNDEF" ]; then
+			:
+		else
+			echo " "
+			echo " Vhost $number must be down before configuring"
+			exit 1
+		fi
+		;;
+	f)	fallback="$OPTARG" 
+		if [ "$fallback" -ne 0 -a "$fallback" -ne 1  -a \
+			"$fallback" -ne 2 -a "$fallback" -ne 3  -a "$fallback" -ne 8  -a "$fallback" -ne 9 ]; then
+			echo " "
+			echo "f must be 0, 1, 2, 3, 8 or 9 (node0,1,2,3,either,none)"
+			usage
+			exit 1
+		fi
+		;;
+	t)	failto="$OPTARG" 
+		if [ "$failto" -ne 0 -a "$failto" -ne 1  -a \
+			 "$failto" -ne 2 -a "$failto" -ne 3  -a "$failto" -ne 8  -a "$failto" -ne 9 ]; then
+			echo " "
+			echo "t must be 0, 1, 2, 3, 8 or 9 (node0,1,2,3,either,none)"
+			usage
+			exit 1
+		fi
+		;;
+	n)	name="$OPTARG"
+		if [ ! "x`$DIR/fstha export|grep -w $name`" = "x" ]; then
+			touch $WARN
+			echo " "
+			echo "$name has been previously used"
+		fi
+		;;
+	d)	base="$OPTARG"
+		if [ ! "x`$DIR/fstha export|grep -w $base`" = "x" ]; then
+			touch $WARN
+			echo " "
+			echo "-b $base has been previously used"
+		fi
+		;;
+	[?])	usage
+		exit 1
+		;;
+	esac
+
+done
+shift `expr $OPTIND - 1`
+
+if [ -f $WARN ]; then
+	echo " "
+	echo "Press [Return] to Continue  or  ^C "
+	read foo
+fi
+rm -f $WARN
+
+
+define=yes
+if [ "x$number" = "x" -o "x$base" = "x" -o "x$name" = "x" ]; then
+		echo number = $number
+		echo base = $base
+		echo name = $name
+		echo " "
+		echo "Must -x, -d and -n"
+		usage
+		exit 1
+fi
+
+mkdir -p $base/
+cp $FLIB/S00* $base/
+
+
+if [ "$define" = "yes" ]; then
+	echo "Working: Define..."
+	fstha setfullq lh${number}stat $stat
+	fstha setfullq lh${number}timeo 0
+	fstha setfullq lh${number}path $base
+	fstha setfullq lh${number}name $name
+	fstha setfullq lh${number}node $node
+	fstha setfullq lh${number}fallback $fallback
+	fstha setfullq lh${number}failto $failto
+fi

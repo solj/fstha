@@ -1,0 +1,88 @@
+Foundation Software Tools                                        fstha(1)
+
+NAME
+
+        fstha - command line cluster administration
+
+SYNOPSIS
+        fstha <command>
+
+               where [command] is bootup
+                                  startup
+                                  shutdown
+                                  status
+                                  export
+                                  backup
+
+                                  locate   <VH#> <Node# or 'N'>
+               
+                                  nocheck <App#> <VH#>
+                                  on      <App#> <VH#>
+                                  off     <App#> <VH#>
+
+
+
+DESCRIPTION
+        The fstha command provides control over the status of the cluster,
+        where the virtual hosts are mastered and whether the application
+        monitors are turned on, off or not checked.
+
+        By default (if no command is supplied), fstha will print the 
+        status of the cluster. Valid commands are:
+
+        bootup
+            Start the cluster on the first node that creates the cluster. 
+            This command can only be run on the first node to establish
+            the cluster (after all nodes have left the cluster).
+
+        startup
+            Run this command on a node that is joining the existing
+            cluster. Once started, this node will sync it's configuration
+            database from an existing node. Node 0 will be attempted first
+            followed by a sync to Node 1, then 2 and 3 until a sucessful
+            sync up occurs.
+
+        shutdown
+            Bring this node out of the cluster. Any virtual host mastered
+            on this node will be brought down first. Once all nodes have
+            executed this command, the cluster is down.
+ 
+        status
+            This command will print a status update once per second.
+
+        export
+            Dump the contents of the cluster configuration database.
+
+        backup
+            Copy the contents of the cluster configuration database.
+
+        locate
+            Bring virtual host numbered by VH# up on Node# or bring
+            bring VH# down by specifying 'N'.
+
+        nocheck
+            Disable application testing for App# of virtual host VH#.
+
+        on
+            Turn application App# of virtual host VH# on. Run the start
+            script and enable testing.
+
+        off
+            Turn application App# of virtual host VH# off. Disable
+            testing and run the stop script.
+
+
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fsthamon(1)
+

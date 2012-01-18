@@ -1,0 +1,120 @@
+#!/bin/sh 
+#
+# HA/FST - High Availability Cluster
+# Copyright (C) 2005-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU  General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# 
+# File Name: fstupgrade2.0
+# 		Convert version 1.x conf to 2.x format
+# 
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+#
+
+BASE=`basename $0`
+BINDIR=`dirname $0`
+DIR=`dirname $0`/../etc
+mkdir -p $DIR
+PATH=/usr/ucb:$PATH export PATH
+
+usage () {
+	echo " "
+        echo "Usage: $BASE"
+	echo " "
+}
+
+
+# set defaults
+
+if [ "$#" -ne 0 ]; then
+	usage
+	exit 1
+fi
+CF=`uname -n`.conf
+if [ -f  $DIR/$CF ] ; then
+	/usr/ucb/echo -n "$DIR/$CF already exist. Overwrite? "
+	read str
+	if [ `echo $str|$BINDIR/fstupper` = "Y" -o `echo $str|$BINDIR/fstupper` = "YES" ]; then
+		echo "renaming $DIR/$CF to $DIR/$CF.old.$$"
+		mv $DIR/$CF $DIR/$CF.old.$$
+	else
+		echo "Aborted."
+		exit 1
+	fi
+fi
+
+finish=n
+
+if [ ! -f $BINDIR/`uname -n`.conf ]; then
+	echo Missing $BINDIR/`uname -n`.conf upgrade Aborted.
+	exit 1
+fi
+egrep -v "^node|^pb|^port|^hbport|^hb.\ " $BINDIR/`uname -n`.conf > $DIR/$CF
+while [ ! `echo $finish|$BINDIR/fstupper` = "Y" -a ! `echo $finish|$BINDIR/fstupper` = "YES" ]; do
+#prime it
+echo " " >> $DIR/$CF
+echo "version 200" >> $DIR/$CF
+echo "lh0failto 9" >> $DIR/$CF 
+echo "lh1failto 9" >> $DIR/$CF
+echo "lh2failto 9" >> $DIR/$CF
+echo "lh3failto 9" >> $DIR/$CF
+echo "hb0pg0 10.1.1.1" >> $DIR/$CF
+echo "hb0pg1 10.1.1.2" >> $DIR/$CF
+echo "hb0pg2 10.1.1.3" >> $DIR/$CF
+echo "hb0pg3 10.1.1.4" >> $DIR/$CF
+echo "hb1pg0 10.1.2.1" >> $DIR/$CF
+echo "hb1pg1 10.1.2.2" >> $DIR/$CF
+echo "hb1pg2 10.1.2.3" >> $DIR/$CF
+echo "hb1pg3 10.1.2.4" >> $DIR/$CF
+
+echo -n "TCP port number to use, port=[1500]? "; read str; val=${str:-"1500"}; echo "port $val" >> $DIR/$CF
+echo -n "UDP port number to use for Heartbeats, hbport=[1501]? "; read str; val=${str:-"1501"}; echo "hbport $val" >> $DIR/$CF
+echo -n "What is node0's IP address, node0=[]? "; read str; val=${str:-"-"}; echo "node0 $val" >> $DIR/$CF
+echo -n "What is node1's IP address, node1=[]? "; read str; val=${str:-"-"}; echo "node1 $val" >> $DIR/$CF
+echo -n "What is node2's IP address, node2=[]? "; read str; val=${str:-"-"}; echo "node2 $val" >> $DIR/$CF
+echo -n "What is node3's IP address, node3=[]? "; read str; val=${str:-"-"}; echo "node3 $val" >> $DIR/$CF
+echo -n "What is this node (`uname -n`) number (0/1), nodeN=[]? "; read str; val=${str:-"-"}; echo "nodeN $val" >> $DIR/$CF
+nodeN=$val
+if [ ! "x$nodeN" = x0 -a ! "x$nodeN" = x1 -a ! "x$nodeN" = x2 -a ! "x$nodeN" = x3 ]; then
+echo -$nodeN- Must be either 0, 1, 2 or 3
+exit
+fi
+echo -n "What is this node's heartbeat0 (eg eri0), hb0=[]? "; read str; val=${str:-"-"}; echo -n "hb0  $val" >> $DIR/$CF
+if [ "x$nodeN" = x0 ]; then
+	echo " 10.1.1.1 255.255.255.0 10.1.1.255" >> $DIR/$CF
+elif [ "x$nodeN" = x1 ]; then
+	echo " 10.1.1.2 255.255.255.0 10.1.1.255" >> $DIR/$CF
+elif [ "x$nodeN" = x2 ]; then
+	echo " 10.1.1.3 255.255.255.0 10.1.1.255" >> $DIR/$CF
+else
+	echo " 10.1.1.4 255.255.255.0 10.1.1.255" >> $DIR/$CF
+fi
+
+echo -n "What is this node's heartbeat1 (eg eri1), hb1=[]? "; read str; val=${str:-"-"}; echo -n "hb1  $val" >> $DIR/$CF
+if [ "x$nodeN" = x0 ]; then
+	echo " 10.1.2.1 255.255.255.0 10.1.2.255" >> $DIR/$CF
+elif [ "x$nodeN" = x1 ]; then
+	echo " 10.1.2.2 255.255.255.0 10.1.2.255" >> $DIR/$CF
+elif [ "x$nodeN" = x2 ]; then
+	echo " 10.1.2.3 255.255.255.0 10.1.2.255" >> $DIR/$CF
+else
+	echo " 10.1.2.4 255.255.255.0 10.1.2.255" >> $DIR/$CF
+fi
+echo -n "How many seconds between heartbeats, hbdelay=[1]? "; read str; val=${str:-"1"}; echo "hbdelay $val" >> $DIR/$CF
+echo -n "How many before connection failure is detected (should be greater than hbdelay), pbsecs=[3]? "; read str; val=${str:-"3"}; echo "hbtimeout $val" >> $DIR/$CF
+echo ""
+echo ""
+cat $DIR/$CF
+echo ""
+echo -n 'Does this look good? '
+read finish
+
+done
+
+mv $BINDIR/`uname -n`.conf $BINDIR/`uname -n`.conf.upgraded

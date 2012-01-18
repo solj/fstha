@@ -1,0 +1,105 @@
+Foundation Software Tools                                        fstmodapp(1)
+
+NAME
+
+        fstmodapp - modify application monitor attributes
+
+SYNOPSIS
+        fstmodapp <OPTIONS>
+
+DESCRIPTION
+        The fstmodapp is used to create or change an application (monitor).
+
+OPTIONS
+        The following options are supported:
+
+        -x #      REQUIRED. There are four applications per virtual
+                  host numbered 0, 1, 2, and 3. Use this option to
+                  specify which.
+
+        -n text   REQUIRED. The name of the application.
+
+        -v #      REQUIRED IF -V is NOT USED. The number of the virtual
+                  host that this application belongs to.
+
+        -V text   REQUIRED IF -v is NOT USED. The name of the virtual
+                  host that this application belongs to. 
+
+        -c #      The number of times the test script (see -t) script
+                  can fail before a failover occurs. The default is
+                  0 (never).
+
+        -m #      The number of seconds allowed for a script to execute
+                  before a time-out occurs. The default is 30 seconds.
+
+
+        -p #      The number of seconds to pause before testing begins.
+
+        The following are REQUIRED if -F is not used:
+
+        -s path   Use this option to specify the name 
+                  of script used to start the application. This
+                  script should return an exit code of 0 is successful
+                  and a 1 if an error occurred.
+
+        -o path   Use this option to specify the name 
+                  of script used to stop the application. This
+                  script should return an exit code of 0 is successful
+                  and a 1 if an error occurred.
+
+        -t path   Use this option to specify the name 
+                  of script used to test the application. This
+                  script should return an exit code of 0 is successful
+                  and a 1 if an error occurred.
+
+        The following is REQUIRED if -s, -o -t is not used:
+
+        -F text   The builtin application monitor name. Valid names
+                  are apache, nfs, nic, oracle, and samba.
+
+        -a test   REQUIRED for nfs and oracle. Additional information.
+                  For nfs this specifies the shared mount point.
+                  For oracle, this is the ORACLE_SID.
+
+
+EXAMPLES
+        Example 1: Create a builtin application monitor for apache:
+
+        example1# fstmodapp -x 0 -v 1 -F apache -c 5
+
+
+        Example 2: Create a builtin application monitor for oracle:
+
+        example2# fstmodapp -x 1 -v 2 -F oracle -a PRODdb -c 2
+
+
+        Example 3: Create a custom application monitor whose name is MyApp,
+                   belonging to virtual host number 2:
+
+        example3# fstmodapp -x 0 -s /opt/FSTha/vh/MyHost/MyApp/start \
+                                -o /opt/FSTha/vh/MyHost/MyApp/stop \
+                                -t /opt/FSTha/vh/MyHost/MyApp/test \
+                           -v 2 \
+                           -n MyApp
+
+
+        Example 4: Change MyApp's stop script:
+
+        example4# fstmodapp -x 0 -s /opt/FSTha/vh/MyHost/MyApp/start \
+                                -o /opt/FSTha/vh/MyHost/MyApp/stop.new \
+                                -t /opt/FSTha/vh/MyHost/MyApp/test \
+                           -v 2 \
+                           -n MyApp
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fstdelapp(1)

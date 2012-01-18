@@ -1,0 +1,55 @@
+#!/bin/ksh 
+# apps/oracle/start 
+#
+# Copyright (c) Foundation Software Tools, LLC
+#
+
+DIR=`dirname $0`
+. $DIR/env
+
+$DIR/test
+if [ $? -eq 0 ]; then
+	exit 0
+fi
+echo $ORACLE_SID_STRING|tr "|" "\n"|while read sid; do
+        ORACLE_HOME=`grep "^${sid}:" $ORATAB |awk -F':' '{print $2}'`
+        if [ "x$ORACLE_HOME" = x ]; then
+                echo Cannot get database home for $sid
+                $LOGGER Cannot get database home for $sid
+		exit 1
+        else
+
+		PATH=$ORACLE_HOME/bin:$PATH export PATH
+                ORAENV_ASK=NO
+                ORACLE_SID="$sid"
+                export ORAENV_ASK ORACLE_HOME ORACLE_SID
+		if  [  -f ${ORACLE_HOME}/dbs/lk`echo $ORACLE_SID|fstupper` ];
+		then
+			/usr/bin/su $ORACLE_USER -c /usr/bin/sh <<-END 
+				echo ""|. $ORAENVSCRIPT
+				echo "connect / as sysdba
+				shutdown abort
+				exit" | sqlplus /nolog > /dev/null 2>&1
+
+			END
+		fi
+
+		$LOGGER Starting $ORACLE_SID
+		/usr/bin/su $ORACLE_USER -c /usr/bin/sh <<-END 
+		echo ""|. $ORAENVSCRIPT
+		echo "connect / as sysdba
+		startup
+		exit" | sqlplus /nolog > /dev/null 2>&1
+
+		END
+		res=$?
+		/usr/bin/su $ORACLE_USER -c /usr/bin/sh <<-END 
+		echo ""|. $ORAENVSCRIPT
+		if [ -f $ORACLE_HOME/bin/lsnrctl ]; then
+			$ORACLE_HOME/bin/lsnrctl start > /dev/null 2>&1
+		fi
+		END
+        fi
+
+done
+exit $res

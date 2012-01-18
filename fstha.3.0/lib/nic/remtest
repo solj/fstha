@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# apps/nic/remtest
+#
+# Copyright (c) Foundation Software Tools, LLC
+#
+exit 0

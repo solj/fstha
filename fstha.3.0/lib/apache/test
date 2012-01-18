@@ -1,0 +1,12 @@
+#!/bin/sh
+DIR=`dirname $0`
+. $DIR/env
+
+cd $DIR
+cat /dev/null > results
+/usr/local/bin/wget --delete-after -o results  http://$IP:$PORT/$PAGE
+if [ `grep -c 'HTTP.*OK' results` -gt 0 ]; then
+	exit 0
+else
+	exit 1
+fi

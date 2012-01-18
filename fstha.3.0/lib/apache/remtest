@@ -1,0 +1,15 @@
+#!/bin/sh
+# apache/remtest
+#(c) Foundation Softwre Tools, LLC'
+#
+DIR=`dirname $0`
+. $DIR/env
+
+cd $DIR
+> remresults
+/usr/local/bin/wget --delete-after -o remresults  http://$IP:$PORT/$PAGE
+if [ `grep -c 'HTTP.*OK' remresults` -gt 0 ]; then
+	exit 0
+else
+	exit 1
+fi

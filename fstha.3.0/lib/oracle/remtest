@@ -1,0 +1,41 @@
+#!/bin/ksh 
+# oracle/remtest 
+#
+# Copyright (c) Foundation Software Tools, LLC
+#
+
+DIR=`dirname $0`
+. $DIR/env
+
+rm -f $DIR/remtest.res
+result=0
+echo $ORACLE_SID_STRING|tr "|" "\n"|while read sid; do
+        ORACLE_HOME=`grep "^${sid}:" $ORATAB |awk -F':' '{print $2}'`
+        if [ "x$ORACLE_HOME" = x ]; then
+                echo Cannot get database home for $sid
+                $LOGGER Cannot get database home for $sid
+		exit 1
+        else
+		PATH=ORACLE_HOME/bin:$PATH export PATH
+                ORAENV_ASK=NO
+                ORACLE_SID="$sid"
+                export ORAENV_ASK ORACLE_HOME ORACLE_SID
+/usr/bin/su $ORACLE_USER -c /usr/bin/sh <<EOF 
+echo ""|. $ORAENVSCRIPT
+echo "create table foobar (x number);
+drop table foobar;
+" | sqlplus $PASSWORDSTRING@$ORACLE_SID
+
+EOF
+	result=`expr $result + $?`
+	echo $result > $DIR/remtest.res
+	fi
+done
+
+result=`cat $DIR/remtest.res`
+#Restart if failed
+#if [ "$result" -ne 0 ]; then
+#	$DIR/start
+#fi
+rm -f $DIR/remtest.res
+exit $result

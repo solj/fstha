@@ -1,0 +1,52 @@
+Foundation Software Tools                                        fstaddvh(1)
+
+NAME
+
+        fstaddvh - define virtual host
+
+SYNOPSIS
+        fstaddvh <OPTIONS>
+
+DESCRIPTION
+        The fstaddvh is used to create a virtual host.
+
+OPTIONS
+        The following are supported:
+
+        -x #       REQUIRED. There are four virtual hosts per cluster
+                   numbered 0, 1, 2, and 3. Use this option to specify
+                   which.
+
+         -d dir    REQUIRED. Ddefine virtualhost's base directory.
+
+         -n name   REQUIRED. Define virtualhost's name.
+
+         -f node#  OPTIONAL. Specify a node to fallback to when node
+                   becomes available. The default is neither.
+
+         -t node#  OPTIONAL. Specify a node to fail to if node is
+                   available at time of failover. The default is neither.
+
+
+EXAMPLES
+        Example 1: Create a virtual host whose name is WEB as
+                   virtual host number 1.
+
+        example# fstaddvh -x 1 -d /opt/FSTha/vh/WEB -n WEB 
+        example# fstmodvh -x 1 -f 0 \
+                          -1 le0:1 -2 le0:2 -i 192.168.1.11 \
+                          -m 255.255.255.0 -b 192.168.1.255
+
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fstdelvh(1), fstmodvh(1)

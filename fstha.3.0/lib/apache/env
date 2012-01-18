@@ -1,0 +1,7 @@
+LD_LIBRARY_PATH=${LD_LIBRARY_PATH:-"/usr/lib"}:/usr/local/ssl/lib
+export LD_LIBRARY_PATH
+APACHECTL=/usr/local/apache/bin/apachectl
+WGET=/usr/local/bin/wget
+IP=`grep -v "^#" $DIR/../nettab|tail -1|awk '{print $3}'`
+PORT=80
+PAGE=

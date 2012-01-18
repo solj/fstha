@@ -1,0 +1,11 @@
+# apps/oracle/env 
+#
+# Copyright Foundation Software Tools, LLC
+#
+ORACLE_USER=oracle
+ORAENVSCRIPT=/usr/local/bin/oraenv
+ORATAB=/var/opt/oracle/oratab
+PATH=`grep "^$ORACLE_USER:" /etc/passwd |awk -F':' '{print $6}'`/bin:$PATH
+LOGGER="logger -t fstha-oracle"
+PASSWORDSTRING=fstha/fsthap
+export ORACLE_USER ORAENVSCRIPT ORATAB  PATH

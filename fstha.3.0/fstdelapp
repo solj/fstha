@@ -1,0 +1,131 @@
+#!/bin/sh 
+#
+# HA/FST - High Availability Cluster
+# Copyright (C) 2003-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# File Name: fstdelapp
+# 		Delete an application agent
+# 
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+#
+
+BASE=`basename $0`
+WARN=/tmp/$BASE.$$.w
+
+usage () {
+	echo " "
+        echo "Usage: $BASE <OPTIONS>"
+	echo " "
+        echo "OPTIONS:"
+	echo "       -x #    (0-3, Application's Unique Number"
+	echo "                     with Virtual Host)                   REQUIRED or -n"
+	echo "       -n str  (txt, Application's Name)                  REQUIRED or -x"
+	echo " "
+	echo "        AND"
+	echo " "
+	echo "       -v str  (txt, Virutal Host Number For Application) REQUIRED or -V "
+	echo "       -V str  (txt, Virutal Host Name For Application)   REQUIRED or -v "
+}
+
+rm -f $WARN
+
+# set defaults
+
+
+while getopts :x:n:v:V: o
+do
+	case "$o" in
+	x)	number="`expr 0 + $OPTARG`" 
+		res=$?
+		if [ "$res" -gt 1 -o "$number" -lt 0 -o "$number" -gt 3 ]; then
+			echo " "
+			echo "x must be betwwen 0 and 3"
+			exit 1
+		fi
+		;;
+	n)	name="$OPTARG"
+		if [ "x`$DIR\fstha export|grep -w $name`" = "x" ]; then
+			echo " "
+			echo "-n $name could not be found"
+			exit 1
+		fi
+		;;
+	v)	vhnumber="`expr 0 + $OPTARG`"
+		res=$?
+		if [ "$res" -gt 1 -o "$vhnumber" -lt 0 -o "$vhnumber" -gt 3 ]; then
+			echo " "
+			echo "v must be betwwen 0 and 3"
+			exit 1
+		fi
+		;;
+	V)	vhname="$OPTARG"
+		if [ "x`$DIR\fstha export|grep lh.name|grep -w $vhname`" = "x" ]; then
+			echo " "
+			echo "$vhname could not be found"
+			exit 1
+		fi
+		;;
+	[?])    usage
+		exit 1
+		;;
+	esac
+
+done
+shift `expr $OPTIND - 1`
+
+if [ -f $WARN ]; then
+	echo " "
+	echo "Press [Return] to Continue  or  ^C "
+	read foo
+fi
+rm -f $WARN
+
+
+if [ "x$number" = "x" -a "x$name" = "x" ]; then
+echo number=$number
+echo name=$name
+	usage
+	exit 1
+fi
+if [ "x$vhnumber" = "x" -a "x$vhname" = "x" ]; then
+echo vhnumber=$vhnumber
+echo vhname=$vhname
+	usage
+	exit 1
+fi
+
+#echo test name=$name start=$start next comes list::::::::: "$@"
+
+if [ ! "x$vhname" = "x" ]; then
+	vhnumber=`fstha export|grep "lh.name $vhname"|awk -F'h' '{print $2}'|awk -F'n' '{print $1}'`
+	if [ $? -ne 0 ]; then
+		echo "${BASE}: ERROR $vhnmae Not Found."
+		usage
+		exit 1
+	fi
+fi
+if [ ! "x$name" = "x" ]; then
+	number=`fstha export|grep "lh${vhnumber}app.name $name"|awk -F'p' '{print $3}'|awk -F'n' '{print $1}'`
+	if [ $? -ne 0 ]; then
+		echo "${BASE}: ERROR $name Not Found."
+		usage
+		exit 1
+	fi
+fi
+
+echo "Working..."
+fstha setfullq lh${vhnumber}app${number}stat 9
+fstha setfullq lh${vhnumber}app${number}test ""
+fstha setfullq lh${vhnumber}app${number}start ""
+fstha setfullq lh${vhnumber}app${number}stop ""
+fstha setfullq lh${vhnumber}app${number}pause 0
+fstha setfullq lh${vhnumber}app${number}timeo 0
+fstha setfullq lh${vhnumber}app${number}crit 0
+echo "Done."

@@ -1,0 +1,53 @@
+#!/bin/ksh 
+# apps/oracle/start 
+#
+# Copyright (c) Foundation Software Tools, LLC
+#
+
+DIR=`dirname $0`
+. $DIR/env
+
+
+TIMEO=`/opt/FSTha/bin/fstha export appfailtimeo|awk '{print $2}'`
+TIMEO=`expr $TIMEO - 10`
+echo $$ > /tmp/fst_abort_ora.pid
+
+abort () {
+sleep $TIMEO
+PID="`cat /tmp/fst_abort_ora.pid`" 
+if [ "`ps -e|grep -v grep|awk '{print $1}'|grep -c $PID`" -ne "0" ]; then	
+	kill -9 $PID
+	/usr/bin/su $ORACLE_USER -c /usr/bin/sh <<-EOF 
+	echo ""|. $ORAENVSCRIPT
+	echo "connect / as sysdba
+	shutdown abort" | sqlplus /nolog 
+
+	EOF
+fi
+
+}
+
+echo $ORACLE_SID_STRING|tr "|" "\n"|while read sid; do
+        ORACLE_HOME=`grep "^${sid}:" $ORATAB |awk -F':' '{print $2}'`
+        if [ "x$ORACLE_HOME" = x ]; then
+                echo Cannot get database home for $sid
+        else
+		PATH=ORACLE_HOME/bin:$PATH export PATH
+                ORAENV_ASK=NO
+                ORACLE_SID="$sid"
+                export ORAENV_ASK ORACLE_HOME ORACLE_SID
+
+		abort &
+		/usr/bin/su $ORACLE_USER -c /usr/bin/sh <<-EOF 
+		if [ -f $ORACLE_HOME/bin/lsnrctl ]; then
+			$ORACLE_HOME/bin/lsnrctl stop
+		fi
+		echo ""|. $ORAENVSCRIPT
+		echo "connect / as sysdba
+		shutdown immediate
+		exit" | sqlplus /nolog 
+
+		EOF
+        fi
+
+done

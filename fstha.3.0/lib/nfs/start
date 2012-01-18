@@ -1,0 +1,29 @@
+#!/bin/sh
+DIR=`dirname $0`
+
+cd $DIR
+
+VIP=`grep -v "^#" ../nettab|head -1|awk '{print $3}'`
+
+if [ "`grep -v '^#' /etc/dfs/dfstab|grep -c share`" -eq 0 ]; then
+	mkdir -p /var/tmp/.fst.nfs
+	chmod 444 /var/tmp/.fst.nfs
+	chown nobody /var/tmp/.fst.nfs
+	touch /etc/dfs/dfstab
+	echo "share -F nfs -o ro -d /var/tmp/.fst.nfs /var/tmp/.fst.nfs ">> /etc/dfs/dfstab
+	/etc/init.d/nfs.server start
+fi
+
+grep -v "^#" $DIR/shares|head -1|while read toshare foo; do
+	if [ "`ps -ef|grep statd|grep -c $toshare`" -eq 0 ]; then
+		# kill statd
+		/usr/bin/pkill statd
+		mkdir -p $toshare/statmon
+		/usr/lib/nfs/statd -a $VIP -p $toshare/statmon
+	fi
+done
+
+grep -v "^#" $DIR/shares|while read toshare foo; do
+	/usr/sbin/share -F nfs -o rw -d "hs/FST Shared $toshare" $toshare
+done
+exit 0

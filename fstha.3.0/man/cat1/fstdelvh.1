@@ -1,0 +1,43 @@
+Foundation Software Tools                                        fstdelvh(1)
+
+NAME
+
+        fstdelvh - deletes (removes) virtual host attributes
+
+SYNOPSIS
+        fstdelvh <OPTIONS>
+
+DESCRIPTION
+        The fstdelvh is used to delete a virtual host.
+
+OPTIONS
+        The following options are supported, one is required:
+
+         -V text   The name of the virtual host.
+
+         -v #      The number of the virtual host.
+
+
+
+EXAMPLES
+        Example 1: Delete a virtual host whose name is MyHost.
+
+        example# fstdelvh -V MyHost
+
+
+        Example 2: Delete a virtual host whose number is 0.
+
+        example# fstdelvh -v 0
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fstaddvh(1), fstmodvh(1)

@@ -1,0 +1,46 @@
+/*
+HA/FST - High Availability Cluster
+Copyright (C) 2003-2006 Reggie Beavers
+
+Licensed under the terms of the GNU General Public License:
+		http://www.opensource.org/licenses/gpl-license.php
+
+For further information visit:
+		http://www.fstha.com/
+
+File Name: FSTha.README.txt
+		
+Author:
+		Reggie Beavers (reggiebeavers@fstha.com)
+Notes:
+
+HA/FST began as a project because at that time there weren't
+any free solutions that provided high availability with the
+features that I needed. I developed it with intentions of only
+myself seeing the source code. As a result, some code segments
+lack comments and there are obvious places were a function would
+be better than the repeating code, common libraries, etc.
+
+HA/FST was written for Solaris 8 and above. Product binaries can
+be found at http://www.fstha.com.
+
+Donations can be made at http://www.fstha.com/donate
+
+To configure cluster please see http://www.fstha.com/fsthadoc
+
+To install from binaries:
+
+	pkgdd -d FSTha.3.0.pkg FSTha FSThaapp FSThagui
+
+To install from source (v3.0 expects to be located at /opt/FSTha)
+
+	# Base
+	cd fstha.3.0
+	make all
+	make install
+
+	# GUI written for compiling by TCL/TK Dev from ActiveState
+	cd fst-tk.3.0
+	./make-install
+
+*/

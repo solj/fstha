@@ -1,0 +1,7 @@
+# nettab
+# Copyright (c) 2003-2005 Foundation Software Tools
+#
+# required fields
+# -----------------------------------------
+# primary-nic alt-nic  ip-address netmask broadcast [mac-address]
+#le0 le1 192.168.1.212 255.255.255.0 192.168.1.255 0:3:ba:e:4b:bc

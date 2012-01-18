@@ -1,0 +1,5 @@
+#!/bin/sh
+DIR=`dirname $0`
+
+/usr/local/samba/bin/smbclient -L `uname -n` -U%nobody
+exit $?

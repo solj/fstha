@@ -1,0 +1,58 @@
+Foundation Software Tools                                        fstdelapp(1)
+
+NAME
+
+        fstdelapp - deletes (removes) application attributes
+
+SYNOPSIS
+        fstdelapp <OPTIONS>
+
+DESCRIPTION
+        The fstdelapp is used to delete an application (monitor).
+
+OPTIONS
+        The following options are supported, one of each set is required:
+
+
+         -n text   The name of the application.
+
+                   OR
+
+         -v #      The number of the application.
+
+
+         AND
+
+
+         -V text   The name of the virtual host.
+
+                   OR
+
+         -v #      The number of the virtual host.
+
+
+
+EXAMPLES
+        Example 1: Delete an application whose number is 2
+                   belonging to MyHost.
+
+        example# fstdelapp -x 2 -V MyHost
+
+
+        Example 2: Delete a application whose name is MyApp
+                   belonging to virtual host 0.
+
+        example# fstdelapp -n MyApp -v 0
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fstmodapp(1)

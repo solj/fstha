@@ -1,0 +1,72 @@
+Foundation Software Tools                                        fsthamon(1)
+
+NAME
+
+        fsthamon - text-based full screen cluster administration
+
+SYNOPSIS
+        fsthamon <OPTIONS>
+
+DESCRIPTION
+        The fsthamon is used to monitor and change the states of
+        virtual host and their applications. fsthamon can also be
+        used to take a node out of the cluster.
+
+        fsthamon accepts the following input:
+
+        Navigation
+
+        [tab] Toggles selection of Virtual Hosts and App Monitors.
+        [up-arrow] [k] [u] Highlight the item above the currently selected item.
+        [down-arrow] [j] [d] Highlight the item below the currently selected item.
+        [j] and [k] provided for us with "vi" trained fingers!
+        [^R] Refresh the display.
+        [q] Exit fsthamon.
+
+        Applications (monitors)
+
+        [o] Turns on the selected monitor.
+        [f] Turns off the selected monitor.
+        [m] Places monitor in "maintenance mode." (i.e. do not monitor service).
+        [0] Failover the selected virtual host to node-0
+        [1] Failover the selected virtual host to node-1
+        [2] Failover the selected virtual host to node-2
+        [3] Failover the selected virtual host to node-3
+        [n] Bring down virtual host from both nodes.
+        
+        Miscellaneous
+        
+        [s] Shutdown HA/FST on current node.
+        [v] Enable View-only mode.
+        [e] Enable Execute mode.
+
+OPTIONS
+        The following options are supported.
+
+
+         -s #   Number of seconds to sleep between polls.
+                The default is 1.
+
+         -v     Start in ViewOnly (Read Only) mode. No changes
+                can be made to the cluster while in this mode.
+
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+        The TERM environment variable should be set appropriately
+        (your terminal size must be at least 80x24).
+
+EXIT STATUS
+        The following exit values are returned:
+
+        0     Command completed successfully.
+
+        >0    An error occurred.
+
+SEE ALSO
+        fstha(1)
+
+NOTES
+        fsthamon will terminate if the number of virtual hosts defined changes.
+        If a virtual host is added or deleted then fsthamon will exit.
+

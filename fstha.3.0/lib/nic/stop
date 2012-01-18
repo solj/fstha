@@ -1,0 +1,8 @@
+#!/bin/sh
+#
+# apps/nic/stop
+#
+# Copyright (c) Foundation Software Tools, LLC
+#
+
+exit 0

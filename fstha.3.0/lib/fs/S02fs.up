@@ -1,0 +1,52 @@
+#!/bin/sh
+#
+# S02fs.up
+#
+# (c)2003 - 2005 Foundation Software Tools, LLC
+#
+
+
+PATH=/usr/bin:/usr/sbin:/opt/FSTha/bin:$PATH
+export PATH
+DIR=`dirname $0`
+LOGGER="/usr/bin/logger -t `pwd`/fs.up "
+
+vx_import () {
+dg=`echo $1|awk -F'/' '{print $5}'`
+#vxdg -Cf import $dg
+vxdg -C import $dg
+vxvol -g $dg startall
+}
+
+metaset_take () {
+set=`echo $1|awk -F'/' '{print $4}'`
+#metaset -s $set -t -f
+metaset -s $set -t 
+}
+
+TMPFILE=/tmp/`echo $0|tr '/' '_'`.tmp
+rm $TMPFILE > /dev/null 2>&1
+grep -v "^#" $DIR/fstab|while read dev rdev mpt fstype rest; do
+	mkdir -p $mpt
+	if [ "`echo $dev|awk -F'/' '{print $3}'`" = "vx" ]; then
+		vx_import $dev
+	fi
+	if [ "`echo $dev|awk -F'/' '{print $3}'`" = "md" \
+		-a ! "`echo $dev|awk -F'/' '{print $3}'`" = "dsk" ]; then
+		metaset_take $dev
+	fi
+	mount -F $fstype $dev $mpt
+	if [ "$?" -ne "0" -a `mount -p|awk '{print $1}'|grep -c $dev` -ne 1 ]; then
+		$LOGGER FSCKing $dev for $mpt.
+		fsck -y $rdev
+		mount -F $fstype $dev $mpt
+		if [ "$?" -ne "0" ]; then
+		$LOGGER Mounting $dev at $mpt failed. 
+			touch $TMPFILE
+		fi
+	fi
+done
+if [ -f  $TMPFILE ]; then
+	exit 1
+fi
+exit 0

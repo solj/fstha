@@ -1,0 +1,10 @@
+#!/bin/sh
+#samba/remtest
+#(c) Foundation Software Tools, LLC
+
+DIR=`dirname $0`
+
+IP=`grep -v "^#" $DIR/../nettab|tail -1|awk '{print $3}'`
+
+/usr/local/samba/bin/smbclient -L $IP  -U%nobody
+exit $?

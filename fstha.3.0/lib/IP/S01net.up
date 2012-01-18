@@ -1,0 +1,47 @@
+#!/bin/sh
+#
+# S01net.up
+#
+# (c)2003-2005 Foundation Software Tools, LLC
+#
+
+PATH=/usr/bin:/usr/sbin:/opt/FSTha/bin:$PATH
+export PATH
+
+DIRNAME=`dirname $0`
+NETTAB=$DIRNAME/nettab
+LOGGER="logger -t `pwd`/S01net.up -p daemon.notice "
+
+grep -v "^#" $NETTAB|while read pdev adev pubip dumip1 dumip2 mast bcast ether; do
+	ifconfig $pdev plumb
+	if [ "$?" -ne "0" ]; then
+		$LOGGER Plumb $pdev Failed.
+		exit 1
+	fi
+	ping $pubip 3
+	if [ "$?" -ne "0" ]; then
+		##ifconfig $pdev $ether up
+		ifconfig $pdev inet $dumip1 netmask $mast broadcast $bcast \
+			group fstproduction deprecated -failover up \
+			addif $pubip netmask $mast broadcast $bcast failover up
+		if [ "$?" -ne "0" ]; then
+			$LOGGER Ifconfig $pdev With $pubip/$dumip1 Failed.
+			exit 1
+		fi
+		ifconfig $adev plumb
+		if [ "$?" -ne "0" ]; then
+			$LOGGER Plumb $adev Failed.
+			exit 1
+		fi
+		##ifconfig $adev $ether up
+		ifconfig $adev inet $dumip2 netmask $mast broadcast $bcast \
+			group fstproduction deprecated -failover standby up
+		if [ "$?" -ne "0" ]; then
+			$LOGGER Ifconfig $adev With $dumip2 Failed.
+			exit 1
+		fi
+	else
+		$LOGGER  $ip Already Exists. Failed.
+		exit 1
+	fi
+done

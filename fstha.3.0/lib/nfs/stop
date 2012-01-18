@@ -1,0 +1,9 @@
+#!/bin/sh
+DIR=`dirname $0`
+
+grep -v "^#" $DIR/shares|while read shared foo; do
+	unshare $shared
+done
+/etc/init.d/nfs.client stop
+/etc/init.d/nfs.client start
+exit 0

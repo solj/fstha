@@ -1,0 +1,374 @@
+#!/bin/sh 
+#
+# HA/FST - High Availability Cluster
+# Copyright (C) 2003-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU  General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# 
+# File Name: fstmodvh
+# 		Modify a virtual host
+# 
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+#
+
+DIR=`dirname $0`
+BASE=`basename $0`
+WARN=/tmp/$BASE.$$.w
+FLIB=/opt/FSTha/lib
+ISDOWN=1
+ISFAIL=3
+ISUNDEF=9
+
+usage () {
+	echo " "
+        echo "Usage: $BASE <OPTIONS>"
+	echo " "
+        echo "REQUIRED:"
+	echo "       -x #    (0-3, Virtual Host's Unique Number)"
+	echo "REQUIRED IF NOT PREVIOULY DEFINED:"
+	echo "       -d str  (txt, Virtual Host's Base Directory)"
+	echo "       -n str  (txt, Virutal Host Name)"
+	echo " "
+	echo "OPTIONAL:"
+	echo "       -d str  (txt, Virtual Host's Base Directory)"
+	echo "       -n str  (txt, Virutal Host Name)"
+	echo "       -f #    (0,1,2,3,8 Fallback to this Node when Node becomes available, 8=Either, DEFAULT=Neither)"
+	echo "       -t #    (0,1,2,3,8 Fail to this Node if Node is available at failover, 8=Either, DEFAULT=Neither)"
+	echo " "
+	echo "IP SETUP:  OPTIONAL BUT ALL REQUIRED IF USED:"
+	echo "       -1 if1  (txt, Primary Network Interface, may be logical, eg qfe0:1)"
+	echo "       -2 if2  (txt, Alternate Network Interface, may be logical, eg qfe0:2)"
+	echo "       -m adr  (txt, Netmask, eg 255.255.255.0)"
+	echo "       -b adr  (txt, Broadcast, eg 192.168.1.255)"
+	echo " "
+	echo "       PLUS:"
+	echo "       -i ip   (txt, IP Address when NOT using IP Multipathing"
+	echo "             OR"
+	echo "       -I ip   (txt, IP Address when USING IP Multipathing"
+	echo "IP OPTIONAL SETUP:"
+	echo "       -e adr  (txt, Ethernet Address, eg 0:3:ba:e:4b:bc)"
+	echo " "
+	echo "FS SETUP:  OPTIONAL BUT ALL REQUIRED IF USED:"
+	echo "       -D str  (txt, Device to mount, e.g. /dev/dsk/c1t1d0s0)"
+	echo "       -R str  (txt, Device to fsck, e.g. /dev/rdsk/c1t1d0s0)"
+	echo "       -M str  (txt, Mount Point, e.g. /MyDirectory)"
+	echo "       -F str  (txt, Filesystem Type, e.g. ufs, vxfs)"
+}
+
+rm -f $WARN
+
+echo "Checking..."
+
+# set defaults
+node="`$DIR/fstha export|awk '/nodeN/ {print $2}'`"
+stat=1
+fallback=9
+failto=9
+
+while getopts :x:d:n:1:2:m:b:e:i:I:f:t:D:R:M:F: o
+do
+	case "$o" in
+	x)	number="`expr 0 + $OPTARG`" 
+		export number
+		res=$?
+		if [ "$res" -gt 1 -o "$number" -lt 0 -o "$number" -gt 3 ]; then
+			echo " "
+			echo "x must be between 0 and 3"
+			usage
+			exit 1
+		fi
+		astat=`$DIR/fstha export lh${number}stat|awk '{print $2}'`
+		if [  "$astat" -eq "$ISFAIL" -o "$astat" -eq "$ISDOWN"  -o "$astat" -eq "$ISUNDEF" ]; then
+			:
+		else
+			echo " "
+			echo " Vhost $number must be down before configuring"
+			exit 1
+		fi
+		;;
+	f)	fallback="$OPTARG" 
+		if [ "$fallback" -ne 0 -a "$fallback" -ne 1  -a \
+			"$fallback" -ne 2 -a "$fallback" -ne 3  -a "$fallback" -ne 8  -a "$fallback" -ne 9 ]; then
+			echo " "
+			echo "f must be 0, 1, 2, 3, 8 or 9 (node0,1,2,3,either,none)"
+			usage
+			exit 1
+		fi
+		;;
+	t)	failto="$OPTARG" 
+		if [ "$failto" -ne 0 -a "$failto" -ne 1  -a \
+			 "$failto" -ne 2 -a "$failto" -ne 3  -a "$failto" -ne 8  -a "$failto" -ne 9 ]; then
+			echo " "
+			echo "t must be 0, 1, 2, 3, 8 or 9 (node0,1,2,3,either,none)"
+			usage
+			exit 1
+		fi
+		;;
+	n)	name="$OPTARG"
+		if [ ! "x`$DIR/fstha export|grep -w $name`" = "x" ]; then
+			touch $WARN
+			echo " "
+			echo "$name has been previously used"
+		fi
+		;;
+	d)	base="$OPTARG"
+		if [ ! "x`$DIR/fstha export|grep -w $base`" = "x" ]; then
+			touch $WARN
+			echo " "
+			echo "-d $base has been previously used"
+		fi
+		;;
+	1)	if1="$OPTARG"
+		if [  "x$if1" = "x" ]; then
+			echo " "
+			echo "-1 requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	2)	if2="$OPTARG"
+		if [  "x$if2" = "x" ]; then
+			echo " "
+			echo "-2 requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	m)	msk="$OPTARG"
+		if [  "x$msk" = "x" ]; then
+			echo " "
+			echo "-m requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	b)	bct="$OPTARG"
+		if [  "x$bct" = "x" ]; then
+			echo " "
+			echo "-b requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	e)	ether="$OPTARG"
+		if [  "x$ether" = "x" ]; then
+			echo " "
+			echo "-e requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	i)	ip="$OPTARG"
+		if [  "x$ip" = "x" ]; then
+			echo " "
+			echo "-i requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	I)	IP="$OPTARG"
+		if [  "x$IP" = "x" ]; then
+			echo " "
+			echo "-I requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	D)	DEVICE="$OPTARG"
+		if [  "x$DEVICE" = "x" ]; then
+			echo " "
+			echo "-D requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	R)	RAW="$OPTARG"
+		if [  "x$RAW" = "x" ]; then
+			echo " "
+			echo "-R requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	M)	MNT="$OPTARG"
+		if [  "x$MNT" = "x" ]; then
+			echo " "
+			echo "-M requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	F)	FS="$OPTARG"
+		if [  "x$FS" = "x" ]; then
+			echo " "
+			echo "-F requires a value"
+			usage
+			exit 1
+		fi
+		;;
+	[?])    usage
+		exit 1
+		;;
+	esac
+
+done
+shift `expr $OPTIND - 1`
+
+if [ -f $WARN ]; then
+	echo " "
+	echo "Press [Return] to Continue  or  ^C "
+	read foo
+fi
+rm -f $WARN
+
+
+define=yes
+if [ "x$number" = "x" ]; then
+		echo number = $number
+		echo " "
+		echo "Must use -x"
+		usage
+		exit 1
+fi
+if [ ! "x$name" = "x" ]; then
+	do_name=yes
+else
+	name=`fstha export lh${number}name|awk '{print $2}'`
+fi
+if [ "x$name" = "x" ]; then
+		echo 'You must specify a <name> since it has not been previously defined.'
+		usage
+		exit 1
+fi
+if [ ! "x$base" = "x" ]; then
+	do_base=yes
+else
+	base=`fstha export lh${number}path|awk '{print $2}'`
+fi
+if [ "x$base" = "x" ]; then
+		echo 'You must specify a <base> since it has not been previously defined.'
+		usage
+		exit 1
+fi
+
+#check ip setup
+setup=yes
+if [ "x$if1" = "x" -a "x$if2" = "x" -a "x$msk" = "x" -a \
+     "x$bct" = "x" -a  "x$ip" = "x" -a "x$IP" = "x" ]; then
+	setup=no
+else
+	if [ "x$if1" = "x" -o "x$if2" = "x" -o "x$msk" = "x" -o "x$bct" = "x" \
+		-o \( "x$ip" = "x" -a "x$IP" = "x" \) ]; then
+		echo if1 = $if1
+		echo if2 = $if2
+		echo msk = $msk
+		echo bct = $bct
+		echo IP or ip = $IP $ip
+		echo " "
+		echo "Must Specify All if Any"
+		usage
+		exit 1
+	fi
+	if [ "x$ip" = "x" -o "x$IP" = "x" ]; then
+		:
+	else
+		echo ip = $ip
+		echo IP = $IP
+		echo " "
+		echo "Must Specify -i OR -I but Not Both"
+		usage
+		exit 1
+	fi
+fi
+
+#check fs setup
+fssetup=yes
+if [ "x$DEVICE" = "x" -a "x$RAW" = "x" -a "x$MNT" = "x" -a \
+     "x$FS" = "x" ]; then
+	fssetup=no
+else
+	if [ "x$DEVICE" = "x" -o "x$RAW" = "x" -o "x$MNT" = "x" \
+		-o "x$FS" = "x" ]; then
+		echo DEVICE = $DEVICE
+		echo RAW = $RAW
+		echo MNT = $MNT
+		echo FS = $FS
+		echo " "
+		echo "Must Specify All if Any"
+		usage
+		exit 1
+	fi
+fi
+
+mkdir -p $base/
+cp $FLIB/S00* $base/
+
+
+if [ "$setup" = "yes" ]; then
+	echo "Working: IP Setup..."
+	mkdir -p $base
+	touch $base/foo.$$
+	if [ ! -f $base/foo.$$ ]; then
+		echo "Can't create files under $base. Please correct before continuing"
+		exit
+	fi
+	rm $base/foo.$$
+	
+
+	if [ "x$IP" = "x" ]; then
+	#set ip
+		cp $FLIB/ip/* $base
+		echo Adding \"$if1 $if2 $ip $msk $bct $ether\" to  $base/nettab
+		echo "$if1 $if2 $ip $msk $bct $ether" >> $base/nettab
+	else
+	#setup IP
+		cp $FLIB/IP/* $base
+		oct1=`echo $IP|nawk -F '.' '{print $1}'`
+		oct2=`echo $IP|nawk -F '.' '{print $2}'`
+		oct3=`echo $IP|nawk -F '.' '{print $3}'`
+		oct4=`echo $IP|nawk -F '.' '{print $4}'`
+		oct5=`expr $oct4 + 1`
+		oct6=`expr $oct4 + 2`
+		echo Adding \"$if1 $if2 $IP ${oct1}.${oct2}.${oct3}.${oct5} ${oct1}.${oct2}.${oct3}.${oct6} $msk $bct $ether\" to $base/nettab
+		echo "$if1 $if2 $IP ${oct1}.${oct2}.${oct3}.${oct5} ${oct1}.${oct2}.${oct3}.${oct6} $msk $bct $ether" >> $base/nettab
+	
+	fi
+fi
+
+
+if [ "$fssetup" = "yes" ]; then
+	echo "Working: Filesystem Setup..."
+	mkdir -p $base
+	touch $base/foo.$$
+	if [ ! -f $base/foo.$$ ]; then
+		echo "Can't create files under $base. Please correct before continuing"
+		exit
+	fi
+	rm $base/foo.$$
+	
+	cp $FLIB/fs/* $base
+	echo Adding \"$DEVICE $RAW $MNT $FS \" to  $base/fstab
+	echo "$DEVICE $RAW $MNT $FS" >> $base/fstab
+fi
+
+
+if [ "$define" = "yes" ]; then
+	echo "Working: Define..."
+	fstha setfullq lh${number}stat $stat
+	fstha setfullq lh${number}timeo 0
+if [ "$do_base" = "yes" ]; then
+	fstha setfullq lh${number}path $base
+fi
+if [ "$do_name" = "yes" ]; then
+	fstha setfullq lh${number}name $name
+fi
+#	fstha setfullq lh${number}node $node
+	fstha setfullq lh${number}fallback $fallback
+	fstha setfullq lh${number}failto $failto
+fi

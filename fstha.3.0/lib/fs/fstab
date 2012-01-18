@@ -1,0 +1,7 @@
+# (c) 2004 - 2005 Foundation Software Tools, LLC
+#
+#device                 device                  mount   FS-type
+#to mount               to fsck                 point
+#
+#/dev/dsk/c0t0d0s2      /dev/rdsk/c0t0d0s2      /MyDir  ufs
+#/dev/vx/dsk/Mydg/vol01 /dev/vx/rdsk/Mydg/vol01 /MyDir  vxfs

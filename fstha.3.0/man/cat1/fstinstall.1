@@ -1,0 +1,29 @@
+Foundation Software Tools                                        fstinstall(1)
+
+NAME
+
+        fstinstall - create an initial cluster configuration database
+
+SYNOPSIS
+        fstinstall <OPTIONS>
+
+DESCRIPTION
+        The fstinstall is used to create a new cluster configuration.
+        It should be run only once, at the initial installation.
+        fstinstall will create /opt/FSTha/etc/`uname -n`.conf
+
+        You will be asked a series of questions pertaining to the cluster
+        and the node on which you are executing fstinstall on. You must
+        run fstinstall once and only once on each node.
+
+        It is recommended that you use the defaults where possible.
+
+        Before running fstinstall, destinate which nodes will be 0, 1, 2
+        and  3.
+
+OPTIONS
+        There are no supported options.
+
+ENVIRONMENT VARIABLES
+        The PATH environment variable must include /opt/FSTha/bin
+

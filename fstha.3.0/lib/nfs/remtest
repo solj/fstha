@@ -1,0 +1,30 @@
+#!/bin/sh
+#nfs/remtst
+#(c) Foundation Software Tools, LLC
+
+DIR=`dirname $0`
+NODENAME=`uname -n`
+BASE=`basename $0`
+IP=`grep -v "^#" $DIR/../nettab|tail -1|awk '{print $3}'`
+BASE=${BASE}$$
+
+rm -f /tmp/$BASE.failed
+
+grep -v "^#" $DIR/shares|while read shared mpt; do
+        if [ `mount -p|grep -c "$shared"` -eq 0 ]; then
+		touch /tmp/$BASE.failed
+                exit 1
+        fi
+	mkdir -p $mpt
+	/usr/sbin/mount -o ro,soft,retry=2 $IP:$shared $mpt > /dev/null 2>&1
+	if [ $? -ne 0 ]; then
+		touch /tmp/$BASE.failed
+	fi
+	/usr/sbin/umount -f $mpt > /dev/null 2>&1
+	rmdir $mpt
+done
+if [ -f /tmp/$BASE.failed ]; then
+	exit 1
+else
+	exit 0
+fi

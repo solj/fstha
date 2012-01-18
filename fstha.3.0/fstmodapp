@@ -1,0 +1,306 @@
+#!/bin/sh 
+#
+# HA/FST - High Availability Cluster
+# Copyright (C) 2003-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU  General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# 
+# File Name: fstmodapp
+# 		Modify an application's agent
+# 
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+#
+
+BASE=`basename $0`
+WARN=/tmp/$BASE.$$.w
+FLIB=/opt/FSTha/lib
+ISOFF=1
+ISFAIL=3
+ISNOCHK=8
+ISUNDEF=9
+
+usage () {
+	echo " "
+        echo "Usage: $BASE <OPTIONS>"
+	echo " "
+        echo "OPTIONS:"
+	echo "       -x #    (0-3, Application's Unique Number"
+	echo "                     with Virtual Host)                   REQUIRED"
+	echo "       -v str  (txt, Virutal Host Number For Application) REQUIRED or -V "
+	echo "       -V str  (txt, Virutal Host Name For Application)   REQUIRED or -v "
+	echo "       -c #    (0 or 999, Number of Test Failures that"
+	echo "                          Tigger Failover 0=Never)         DEFAULT=0"
+	echo "       -p #    (0 or 999, Number of secs To Pause"
+	echo "                          Before Testing Begins)           DEFAULT=60"
+	echo " "
+	echo "       -n str  (txt, Application's Name)                  REQUIRED or -F"
+	echo "       -s str  (txt, Start Script Name)                   REQUIRED or -F"
+	echo "       -o str  (txt, Stop Script Name)                    REQUIRED or -F"
+	echo "       -t str  (txt, Test Script Name)                    REQUIRED or -F"
+	echo " "
+	echo "       -F str  (txt, Name of FST Provided App Support)    REQUIRED or -s,-o,-t"
+	echo "               Names: apache, nfs, nic, oracle, samba"
+	echo " "
+	echo "       nfs:"
+	echo "               -a (txt, Directory to Share)               REQUIRED for -F nfs"
+	echo " "
+	echo "       oracle:"
+	echo "               -a (txt, Oracle SID)                       REQUIRED for -F oracle"
+}
+
+rm -f $WARN
+
+# set defaults
+crit=0
+timeo=30
+pause=60
+stat=1
+
+
+while getopts :x:n:s:o:t:c:p:m:v:V:F:a: o
+do
+	case "$o" in
+	x)	number="`expr 0 + $OPTARG`" 
+		res=$?
+		if [ "$res" -gt 1 -o "$number" -lt 0 -o "$number" -gt 3 ]; then
+			echo " "
+			echo "x must be between 0 and 3"
+			exit 1
+		fi
+		if [ ! "x`fstha export|awk '/lh.app${number}name/ {printf $2}'`" = "x" ]; then
+			touch $WARN
+			echo " "
+			echo " -x $number has been previously used"
+		fi
+
+		;;
+	n)	name="$OPTARG"
+		if [ ! "x`fstha export|grep -w $name`" = "x" ]; then
+			touch $WARN
+			echo " "
+			echo "-n $name has been previously used"
+		fi
+		;;
+	s)	start="$OPTARG"
+		if [ ! -f "$start" ]; then
+			touch $WARN
+			echo " "
+			echo "-s $start does not exist"
+		fi
+		;;
+	o)	stop="$OPTARG"
+		if [ ! -f "$stop" ]; then
+			touch $WARN
+			echo " "
+			echo "-o $stop does not exist"
+		fi
+		;;
+	t)	test="$OPTARG"
+		if [ ! -f "$test" ]; then
+			touch $WARN
+			echo " "
+			echo "-t $test does not exist"
+		fi
+		;;
+	r)	remtest="$OPTARG"
+		if [ ! -f "$remtest" ]; then
+			touch $WARN
+			echo " "
+			echo "-t $remtest does not exist"
+		fi
+		;;
+	c)	crit="`expr 0 + $OPTARG`" 
+		res=$?
+		if [ "$res" -gt 1 -o "$crit" -lt 0 -o "$crit" -gt 9999999 ]; then
+			echo " "
+			echo "c must be between 0 and 9999999"
+			exit 1
+		fi
+		;;
+	p)	pause="`expr 0 + $OPTARG`"
+		res=$?
+		if [ "$res" -gt 1 -o "$pause" -lt 0 -o "$pause" -gt 9999999 ]; then
+			echo " "
+			echo "p must be between 0 and 9999999"
+			exit 1
+		fi
+		;;
+	v)	vhnumber="`expr 0 + $OPTARG`"
+		res=$?
+		if [ "$res" -gt 1 -o "$vhnumber" -lt 0 -o "$vhnumber" -gt 3 ]; then
+			echo " "
+			echo "v must be between 0 and 3"
+			exit 1
+		fi
+		;;
+	V)	vhname="$OPTARG"
+		if [ "x`fstha export|grep lh.name|grep -w $vhname`" = "x" ]; then
+			echo "$vhname could not be found"
+			exit 1
+		fi
+		;;
+	F)	fappname="$OPTARG"
+		if [ $fappname != "apache" -a \
+			$fappname != "nfs" -a \
+			$fappname != "nic" -a \
+			$fappname != "oracle" -a \
+			$fappname != "samba"  \
+			]; then
+			echo " "
+			echo " -F name must be either apache, nfs, nic, oracle or samba"
+			exit 1
+		fi
+		;;
+	a)	addition="$OPTARG"
+		if [ "x$addition" = "x" ]; then
+			echo "-a requires addition text used for oracle and nfs"
+			exit 1
+		fi
+		;;
+	[?])    echo "Invalid Option"
+		usage
+		exit 1
+		;;
+	esac
+
+done
+shift `expr $OPTIND - 1`
+
+astat=`fstha export lh${vhnumber}app${number}stat|awk '{print $2}'`
+if [  "$astat" -eq "" -o "$astat" -eq "$ISUNDEF" -o "$astat" -eq "$ISFAIL" -o "$astat" -eq "$ISOFF" -o  "$astat" -eq "$ISNOCHK" ]; then
+        :
+else
+        echo " "
+        echo " App $number of Vhost $vhnumber must be off or nocheck before configuring"
+        exit 1
+fi
+
+if [ -f $WARN ]; then
+	echo " "
+	echo "Press [Return] to Continue  or  ^C "
+	read foo
+fi
+rm -f $WARN
+
+echo "Checking..."
+
+if [ "x$number" = "x" -o \
+	"x$pause" = "x" \
+	 ]; then
+echo number=$number
+echo pause=$pause
+echo " "
+echo "Must Specify Application\'s Unique Number"
+	usage
+	exit 1
+fi
+if [  "x$fappname" = "x" ]; then
+	if [ "x$name" = "x" -o \
+	"x$start" = "x" -o \
+	"x$stop" = "x" -o \
+	"x$test" = "x"  ]; then
+		echo fname=$fname
+		echo name=$name
+		echo start=$start
+		echo stop=$stop
+		echo test=$test
+		echo " "
+		echo "Must Use -F OR -s,-n,-o,-t"
+			usage
+			exit 1
+	fi
+fi
+if [  ! "x$fappname" = "x" ]; then
+	if [ "x$name" = "x" -a \
+	"x$start" = "x" -a \
+	"x$stop" = "x" -a \
+	"x$remtest" = "x" -a \
+	"x$test" = "x"  ]; then
+		:
+	else
+		echo fname=$fname
+		echo name=$name
+		echo start=$start
+		echo stop=$stop
+		echo test=$test
+		echo remtest=$remtest
+		echo " "
+		echo "Can\'t Use both -F and -s,-n,-o,-t"
+			usage
+			exit 1
+	fi
+fi
+
+if [ "$fappname" = "oracle" -o "$fappname" = "nfs" ]; then
+	if [ "x$addition" = "x" ]; then
+		echo "Use of -F $fappname Requires -a"
+		usage
+		exit 1
+	fi
+fi
+
+
+if [ "x$vhnumber" = "x" -a "x$vhname" = "x" ]; then
+echo vhnumber=$vhnumber
+echo vhname=$vhname
+echo " "
+echo "Must Specify Virtual Host Name or Number"
+	usage
+	exit 1
+fi
+
+#echo test name=$name start=$start next comes list::::::::: "$@"
+
+if [ ! "x$vhname" = "x" ]; then
+	vhnumber=`fstha export|grep "lh.name $vhname"|awk -F'h' '{print $2}'|awk -F'n' '{print $1}'`
+	if [ $? -ne 0 ]; then
+		echo "${BASE}: ERROR $vhnmae Not Found."
+		usage
+		exit 1
+	fi
+fi
+
+echo "Working..."
+if [ ! "x$fappname" = "x" ]; then
+	name=${fappname}${vhnumber}
+	vhpath=`fstha export|grep "lh${vhnumber}path"|awk '{print $2}'`
+	mkdir -p $vhpath
+	touch $vhpath/foo.$$
+	if [ ! -f $vhpath/foo.$$ ]; then
+		echo "Can't create files under $vhpath. Please Correct Before Continuing."
+		exit 1
+	fi
+	rm $vhpath/foo.$$
+        mkdir -p $vhpath/$name
+	cp -r $FLIB/${fappname}/* $vhpath/$name
+	start=${vhpath}/${name}/start
+	stop=${vhpath}/${name}/stop
+	test=${vhpath}/${name}/test
+	remtest=${vhpath}/${name}/remtest
+
+	if [ "$fappname" = "nfs" ]; then
+		echo "# [what to share]    [what to mnt during test]" > ${vhpath}/${name}/shares
+		echo "# /var/tmp/pubserver /mnt/pub1" >> ${vhpath}/${name}/shares
+		echo "$addition /m/pub1"  >> ${vhpath}/${name}/shares
+	fi
+	if [ "$fappname" = "oracle" ]; then
+		echo "ORACLE_SID=$addition; export ORACLE_SID"  >> ${vhpath}/${name}/env
+		echo "ORACLE_SID_STRING=$addition; export ORACLE_SID_STRING"  >> ${vhpath}/${name}/env
+	fi
+fi
+
+fstha setfullq lh${vhnumber}app${number}stat $stat
+fstha setfullq lh${vhnumber}app${number}pause $pause
+fstha setfullq lh${vhnumber}app${number}crit $crit
+fstha setfullq lh${vhnumber}app${number}test $test
+fstha setfullq lh${vhnumber}app${number}remtest $remtest
+fstha setfullq lh${vhnumber}app${number}stop $stop
+fstha setfullq lh${vhnumber}app${number}start $start
+fstha setfullq lh${vhnumber}app${number}name $name
+echo "Done."

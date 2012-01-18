@@ -1,0 +1,7 @@
+# nettab
+# Copyright (c) 2003-2005 Foundation Software Tools
+#
+# required fields
+# -----------------------------------------
+# primary-nic alt-nic pub-ip-address dummy-ip1 dummy-ip2 netmask bcast [mac-addr]
+# qe0 qe1 192.168.1.91 192.168.1.92 192.168.1.93 255.255.255.0 192.168.1.255 0:3:ba:e:4b:bc

@@ -1,0 +1,125 @@
+#!/bin/sh 
+#
+# HA/FST - High Availability Cluster
+# Copyright (C) 2003-2006 Reggie Beavers
+# 
+# Licensed under the terms of the GNU  General Public License:
+# 		http://www.opensource.org/licenses/gpl-license.php
+# 
+# For further information visit:
+# 		http://www.fstha.com/
+# 
+# 
+# File Name: fstinstall
+# 		Cluster installion script
+# 
+# File Authors:
+# 		Reggie Beavers (reggiebeavers@fstha.com)
+
+BASE=`basename $0`
+BINDIR=`dirname $0`
+ETCDIR=${BINDIR}/../etc
+PATH=/usr/ucb:$PATH export PATH
+
+usage () {
+	echo " "
+        echo "Usage: $BASE"
+	echo " "
+}
+
+
+# set defaults
+
+if [ "$#" -ne 0 ]; then
+	usage
+	exit 1
+fi
+CF=`uname -n`.conf
+if [ -f  $ETCDIR/$CF ] ; then
+	/usr/ucb/echo -n "$ETCDIR/$CF already exist. Overwrite? "
+	read str
+	if [ `echo $str|$BINDIR/fstupper` = "Y" -o `echo $str|$BINDIR/fstupper` = "YES" ]; then
+		echo "renaming $ETCDIR/$CF to $ETCDIR/$CF.old.$$"
+		mv $ETCDIR/$CF $ETCDIR/$CF.old.$$
+	else
+		echo "Aborted."
+		exit 1
+	fi
+fi
+
+done=n
+
+
+while [ ! `echo $done|$BINDIR/fstupper` = "Y" -a ! `echo $done|$BINDIR/fstupper` = "YES" ]; do
+#prime it
+echo "cstat  1" > $ETCDIR/$CF
+echo "verbose 1" >> $ETCDIR/$CF
+echo "version 200" >> $ETCDIR/$CF
+echo "htmlallowexec 1" >> $ETCDIR/$CF  # not supported yet
+echo "syslogfac daemon.notice" >> $ETCDIR/$CF   # not supported yet
+echo "logfile /var/adm/messages" >> $ETCDIR/$CF   # not supported yet
+echo "lh0fallback 9" >> $ETCDIR/$CF 
+echo "lh1fallback 9" >> $ETCDIR/$CF
+echo "lh2fallback 9" >> $ETCDIR/$CF
+echo "lh3fallback 9" >> $ETCDIR/$CF
+echo "lh0failto 9" >> $ETCDIR/$CF 
+echo "lh1failto 9" >> $ETCDIR/$CF
+echo "lh2failto 9" >> $ETCDIR/$CF
+echo "lh3failto 9" >> $ETCDIR/$CF
+echo "hb0pg0 10.1.1.1" >> $ETCDIR/$CF
+echo "hb0pg1 10.1.1.2" >> $ETCDIR/$CF
+echo "hb0pg2 10.1.1.3" >> $ETCDIR/$CF
+echo "hb0pg3 10.1.1.4" >> $ETCDIR/$CF
+echo "hb1pg0 10.1.2.1" >> $ETCDIR/$CF
+echo "hb1pg1 10.1.2.2" >> $ETCDIR/$CF
+echo "hb1pg2 10.1.2.3" >> $ETCDIR/$CF
+echo "hb1pg3 10.1.2.4" >> $ETCDIR/$CF
+
+echo -n "How many second between HTML page refreshes, htmlrefreshsecs=[10]? "; read str; val=${str:-"10"}; echo "htmlrefreshsecs $val" >> $ETCDIR/$CF
+echo -n "TCP port number to use, port=[1500]? "; read str; val=${str:-"1500"}; echo "port $val" >> $ETCDIR/$CF
+echo -n "UDP port number to use for Heartbeats, hbport=[1501]? "; read str; val=${str:-"1501"}; echo "hbport $val" >> $ETCDIR/$CF
+echo -n "What is node0's IP address, node0=[]? "; read str; val=${str:-"-"}; echo "node0 $val" >> $ETCDIR/$CF
+echo -n "What is node1's IP address, node1=[]? "; read str; val=${str:-"-"}; echo "node1 $val" >> $ETCDIR/$CF
+echo -n "What is node2's IP address, node2=[]? "; read str; val=${str:-"-"}; echo "node2 $val" >> $ETCDIR/$CF
+echo -n "What is node3's IP address, node3=[]? "; read str; val=${str:-"-"}; echo "node3 $val" >> $ETCDIR/$CF
+echo -n "What is this node (`uname -n`) number (0/1/2/3), nodeN=[]? "; read str; val=${str:-"-"}; echo "nodeN $val" >> $ETCDIR/$CF
+nodeN=$val
+if [ ! "x$nodeN" = x0 -a ! "x$nodeN" = x1 -a ! "x$nodeN" = x2 -a ! "x$nodeN" = x3 ]; then
+echo -$nodeN- Must be either 0, 1, 2 or 3
+exit
+fi
+echo -n "What is this node's heartbeat0 (eg eri0), hb0=[]? "; read str; val=${str:-"-"}; echo -n "hb0  $val" >> $ETCDIR/$CF
+if [ "x$nodeN" = x0 ]; then
+	echo " 10.1.1.1 255.255.255.0 10.1.1.255" >> $ETCDIR/$CF
+elif [ "x$nodeN" = x1 ]; then
+	echo " 10.1.1.2 255.255.255.0 10.1.1.255" >> $ETCDIR/$CF
+elif [ "x$nodeN" = x2 ]; then
+	echo " 10.1.1.3 255.255.255.0 10.1.1.255" >> $ETCDIR/$CF
+else
+	echo " 10.1.1.4 255.255.255.0 10.1.1.255" >> $ETCDIR/$CF
+fi
+
+echo -n "What is this node's heartbeat1 (eg eri1), hb1=[]? "; read str; val=${str:-"-"}; echo -n "hb1  $val" >> $ETCDIR/$CF
+if [ "x$nodeN" = x0 ]; then
+	echo " 10.1.2.1 255.255.255.0 10.1.2.255" >> $ETCDIR/$CF
+elif [ "x$nodeN" = x1 ]; then
+	echo " 10.1.2.2 255.255.255.0 10.1.2.255" >> $ETCDIR/$CF
+elif [ "x$nodeN" = x2 ]; then
+	echo " 10.1.2.3 255.255.255.0 10.1.2.255" >> $ETCDIR/$CF
+else
+	echo " 10.1.2.4 255.255.255.0 10.1.2.255" >> $ETCDIR/$CF
+fi
+echo -n "How many seconds between heartbeats, hbdelay=[1]? "; read str; val=${str:-"1"}; echo "hbdelay $val" >> $ETCDIR/$CF
+echo -n "How many before connection failure is detected (should be greater than hbdelay), pbsecs=[3]? "; read str; val=${str:-"3"}; echo "hbtimeout $val" >> $ETCDIR/$CF
+echo -n "How many seconds for the longest virtual host transition (secs to go up/down), lhfailtimeo=[60]? "; read str; val=${str:-"60"}; echo "lhfailtimeo $val" >> $ETCDIR/$CF
+echo -n "How many seconds for the longest application transition (secs to go up/down), appfailtimeo=[60]? "; read str; val=${str:-"60"}; echo "appfailtimeo $val" >> $ETCDIR/$CF
+echo -n "How many seconds for the longest application test (secs to complete), appfailtesttimeo=[30]? "; read str; val=${str:-"30"}; echo "appfailtesttimeo $val" >> $ETCDIR/$CF
+
+echo ""
+echo ""
+cat $ETCDIR/$CF
+echo ""
+echo -n "Does this look good? "
+read done
+
+done
